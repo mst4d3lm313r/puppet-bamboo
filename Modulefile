@@ -1,11 +1,9 @@
 name    'bamboo'
 version '0.0.1'
-source 'UNKNOWN'
-author 'justinstoller'
+source 'https://github.com/justinstoller/puppet-bamboo'
+author 'Justin Stoller'
 license 'Apache License, Version 2.0'
-summary 'UNKNOWN'
-description 'UNKNOWN'
-project_page 'UNKNOWN'
+summary 'This is a simple module to install bamboo server and agent'
+description 'Install bamboo server with bamboo::server and configure remote agents with bamboo::agent'
 
-## Add dependencies, if any:
-# dependency 'username/name', '>= 1.2.0'
+dependency 'puppetlabs/stdlib', '>= 3.0.0'
