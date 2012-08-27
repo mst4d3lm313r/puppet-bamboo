@@ -54,7 +54,7 @@ class bamboo::server (
   }
 
   file_line { 'set-bamboo-init.properties':
-    path    => "${atlassian_vendor_dir}/webapp/WEB-INF/classes/bamboo-init.properties",
+    path    => "${atlassian_vendor_dir}/Bamboo/webapp/WEB-INF/classes/bamboo-init.properties",
     line    => "bamboo.home=${bamboo_home}",
     match   => '^#?bamboo.home=.*$',
     require => Exec[ 'extract-bamboo-server' ],
@@ -92,7 +92,7 @@ class bamboo::server (
 
   service { $user:
     ensure  => running,
-    enabled => true,
+    enable  => true,
     require => [ File[ '/etc/default/bamboo' ],
                  File[ "${run_dir}/${user}" ],
                  File[ "${log_dir}/${user}" ] ],
