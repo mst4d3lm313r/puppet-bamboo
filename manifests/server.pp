@@ -19,10 +19,15 @@ class bamboo::server (
     file { $atlassian_vendor_dir: ensure => directory }
   }
 
+  Exec {
+    path      => [ '/bin', '/usr/bin', '/usr/local/bin' ],
+    logoutput => on_failure,
+  }
+
   exec { 'download-bamboo-server':
     command => "wget ${download_url}",
     cwd     => $atlassian_vendor_dir,
-    path    => [ '/bin', '/usr/bin', '/usr/local/bin' ],
+    timeout => 120,
     creates => "${atlassian_vendor_dir}/${bamboo_tgz}",
     require => File[ $atlassian_vendor_dir ],
   }
@@ -30,7 +35,6 @@ class bamboo::server (
   exec { 'extract-bamboo-server':
     command => "tar -xf ${bamboo_tgz}",
     cwd     => $atlassian_vendor_dir,
-    path    => [ '/bin', '/usr/bin', '/usr/local/bin' ],
     require => Exec[ 'download-bamboo-server' ],
     creates => "${atlassian_vendor_dir}/Bamboo",
   }
