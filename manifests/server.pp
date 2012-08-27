@@ -53,8 +53,8 @@ class bamboo::server (
     require => User[ $user ],
   }
 
-  file_line { 'set-bamboo-home-in-bamboo-init.properties':
-    path    => "${bamboo_home}/webapp/WEB-INF/classes/bamboo-init.properties",
+  file_line { 'set-bamboo-init.properties':
+    path    => "${atlassian_vendor_dir}/webapp/WEB-INF/classes/bamboo-init.properties",
     line    => "bamboo.home=${bamboo_home}",
     match   => '^#?bamboo.home=.*$',
     require => Exec[ 'extract-bamboo-server' ],
@@ -62,7 +62,7 @@ class bamboo::server (
 
   file { "/etc/init.d/${user}":
     ensure => link,
-    target => "${atlassian_vendor_dir}/Bamboo",
+    target => "${atlassian_vendor_dir}/Bamboo/bamboo.sh",
     require => Exec[ 'extract-bamboo-server' ],
   }
 
@@ -72,13 +72,29 @@ class bamboo::server (
 
   file { '/etc/default/bamboo':
     ensure  => present,
-    source  => template( 'bamboo/defaults.erb' ),
-    require => [ File[ '/etc/default' ], File[ 'symlink-init-script' ] ],
+    content => template( 'bamboo/defaults.erb' ),
+    require => [ File[ '/etc/default' ],
+                 File[ "/etc/init.d/${user}" ],
+                 File_line[ 'set-bamboo-init.properties' ] ],
   }
 
-  service { 'bamboo-server':
+  file { "${run_dir}/${user}":
+    ensure  => directory,
+    owner   => $user,
+    require => User[ $user ],
+  }
+
+  file { "${log_dir}/${user}":
+    ensure  => directory,
+    owner   => $user,
+    require => User[ $user ],
+  }
+
+  service { $user:
     ensure  => running,
     enabled => true,
-    require => File[ '/etc/default/bamboo' ],
+    require => [ File[ '/etc/default/bamboo' ],
+                 File[ "${run_dir}/${user}" ],
+                 File[ "${log_dir}/${user}" ] ],
   }
 }
