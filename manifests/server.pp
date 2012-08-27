@@ -4,7 +4,9 @@ class bamboo::server (
   $atlassian_vendor_dir = '/opt/atlassian',
   $user                 = 'bamboo-server',
   $group                = 'undefined',
-  $home                 = 'undefined'
+  $home                 = 'undefined',
+  $log_dir              = '/var/log',
+  $run_dir              = '/var/run'
 
 ) {
 
@@ -30,6 +32,7 @@ class bamboo::server (
     cwd     => $atlassian_vendor_dir,
     path    => [ '/bin', '/usr/bin', '/usr/local/bin' ],
     require => Exec[ 'download-bamboo-server' ],
+    creates => "${atlassian_vendor_dir}/Bamboo",
   }
 
   group { $bamboo_group: ensure => present }
@@ -44,5 +47,34 @@ class bamboo::server (
     ensure  => directory,
     owner   => $user,
     require => User[ $user ],
+  }
+
+  file_line { 'set-bamboo-home-in-bamboo-init.properties':
+    path    => "${bamboo_home}/webapp/WEB-INF/classes/bamboo-init.properties",
+    line    => "bamboo.home=${bamboo_home}",
+    match   => '^#?bamboo.home=.*$',
+    require => Exec[ 'extract-bamboo-server' ],
+  }
+
+  file { "/etc/init.d/${user}":
+    ensure => link,
+    target => "${atlassian_vendor_dir}/Bamboo",
+    require => Exec[ 'extract-bamboo-server' ],
+  }
+
+  if ! defined( File[ '/etc/default' ] ) {
+    file { '/etc/default': ensure => directory }
+  }
+
+  file { '/etc/default/bamboo':
+    ensure  => present,
+    source  => template( 'bamboo/defaults.erb' ),
+    require => [ File[ '/etc/default' ], File[ 'symlink-init-script' ] ],
+  }
+
+  service { 'bamboo-server':
+    ensure  => running,
+    enabled => true,
+    require => File[ '/etc/default/bamboo' ],
   }
 }
