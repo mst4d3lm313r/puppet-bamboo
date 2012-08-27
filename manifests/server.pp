@@ -1,4 +1,9 @@
 #
+# Notes on conf/wrapper.conf settings:
+# wrapper.java.additional.3=-Xms256m              <- Initial Heap Size
+# wrapper.java.additional.4=-Xmx512m              <- Max Heap Size
+# wrapper.java.additional.5=-XX:MaxPermSize=256m  <- Max PermGen Size
+#
 # Usage:
 #
 # class { 'bamboo::server':
@@ -23,7 +28,8 @@ class bamboo::server (
   $group                = 'undefined',
   $home                 = 'undefined',
   $log_dir              = '/var/log',
-  $run_dir              = '/var/run'
+  $run_dir              = '/var/run',
+  $port                 = '8085'
 
 ) {
 
@@ -93,6 +99,12 @@ class bamboo::server (
     require => [ File[ '/etc/default' ],
                  File[ "/etc/init.d/${user}" ],
                  File_line[ 'set-bamboo-init.properties' ] ],
+  }
+
+  file_line { 'bamboo-server-conf-port':
+    path => "${atlassian_install_dir}/Bamboo/conf/wrapper.conf",
+    match => '^wrapper\.app\.parameter\.2=.*',
+    line => "wrapper.app.parameter.2=${port}",
   }
 
   file { "${run_dir}/${user}":
