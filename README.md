@@ -47,3 +47,38 @@ class { 'bamboo::client':
 }
 
 ````
+
+
+Example site.pp using inkling/postgresql:
+
+````puppet
+$bamboo_master_hostname = 'bamboo-master.dc1.puppetlabs.net'
+
+node $bamboo_master_hostname {
+
+  class { 'bamboo::server': }
+
+  class { 'postgresql::server': }
+
+  postgresql::database { 'bamboo-server': }
+
+  postgresql::database_user { 'bamboo-server':
+    password_hash => postgresql_password('bamboo-server', 'password'),
+  }
+
+  postgresql::database_grant { 'grant bamboo-server all privileges on bamboo-server db':
+    role => 'bamboo-server',
+    db => 'bamboo-server',
+    privilege => 'create',
+    require => [ Postgresql::Database_user[ 'bamboo-server' ],
+                   Postgresql::Database[ 'bamboo-server' ] ],
+  }
+}
+
+node /bamboo-remote-agent-/ {
+  class { 'bamboo::agent':
+    server => $bamboo_master_hostname,
+  }
+}
+
+````
