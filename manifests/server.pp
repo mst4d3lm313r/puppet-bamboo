@@ -102,7 +102,7 @@ class bamboo::server (
   }
 
   file_line { 'bamboo-server-conf-port':
-    path    => "${atlassian_install_dir}/Bamboo/conf/wrapper.conf",
+    path    => "${atlassian_vendor_dir}/Bamboo/conf/wrapper.conf",
     match   => '^wrapper\.app\.parameter\.2=.*',
     line    => "wrapper.app.parameter.2=${port}",
     require => Exec[ 'extract-bamboo-server' ],
