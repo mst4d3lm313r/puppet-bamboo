@@ -20,7 +20,8 @@ class bamboo::agent (
 
 ) {
 
-  $agent_jar = "atlassian-bamboo-agent-installer-${version}.jar"
+  $initscript = "/etc/init.d/${user}"
+  $agent_jar  = "atlassian-bamboo-agent-installer-${version}.jar"
   $agent_home = $home ? {
     'undefined' => "/var/lib/${user}",
      default    => $home
@@ -47,7 +48,7 @@ class bamboo::agent (
     command  => "wget http://${server}:${server_port}/agentServer/agentInstaller/${agent_jar}",
     cwd      => $agent_home,
     path     => ['/usr/bin', '/bin'],
-    creates  => "${agent_home}/atlassian-agent-installer-${version}.jar",
+    creates  => "${agent_home}/${agent_jar}",
     require  => File[$agent_home],
   }
 
@@ -79,44 +80,54 @@ class bamboo::agent (
     owner  => $user,
   }
 
-  file { "/etc/init.d/${user}":
-    ensure  => link,
-    target  => "${agent_home}/bin/bamboo-agent.sh",
-    require => Exec[ 'install-bamboo-agent' ],
-  }
-
   File_line { path => "${agent_home}/bin/bamboo-agent.sh",
     require => Exec['install-bamboo-agent'],
-    before  => Service['bamboo-agent'],
+    before  => Concat[ $initscript ],
   }
 
   file_line { 'bamboo-initscript-wrapper-cmd':
-    line  => "WRAPPER_CMD='${agent_home}/bin/wrapper'",   
+    line  => "WRAPPER_CMD='${agent_home}/bin/wrapper'",
     match => '^WRAPPER_CMD=',
   }
 
   file_line { 'bamboo-initscript-wrapper-conf':
-    line  => "WRAPPER_CONF='${agent_home}/conf/wrapper.conf'",   
+    line  => "WRAPPER_CONF='${agent_home}/conf/wrapper.conf'",
     match => '^WRAPPER_CONF=',
   }
 
   file_line { 'bamboo-initscript-lockdir':
-    line  => "LOCKDIR='/var/lock/subsys/${user}'",   
+    line  => "LOCKDIR='/var/lock/subsys/${user}'",
     match => '^LOCKDIR=',
   }
 
   file_line { 'bamboo-initscript-piddir':
-    line  => "PIDDIR='/var/run/${user}'",   
+    line  => "PIDDIR='/var/run/${user}'",
     match => '^PIDDIR=',
   }
 
   file_line { 'bamboo-initscript-run-user':
-    line => "RUN_AS_USER='${user}'",
+    line  => "RUN_AS_USER='${user}'",
     match => '^\S*RUN_AS_USER=',
   }
 
+  concat { $initscript: }
+
+  concat::fragment { 'bamboo-lsb-header':
+    target  => $initscript,
+    content => template( 'bamboo/lsb_header.erb' ),
+    order   => '01',
+  }
+
+  concat::fragment{ 'bamboo-initscript-body':
+    target  => $initscript,
+    ensure  => "${agent_home}/bin/bamboo-agent.sh",
+    order   => '02',
+    require => Exec[ 'install-bamboo-agent' ],
+  }
+
   service { 'bamboo-agent':
-    ensure => 'running',
-    enable => true,
+    ensure  => 'running',
+    enable  => true,
+    require => Concat[ $initscript ],
   }
 }
