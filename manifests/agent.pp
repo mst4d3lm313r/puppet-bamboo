@@ -8,6 +8,7 @@
 #   agent_home  => '/var/lib/bamboo' # make sure all parent directories exist, default shown
 #   user        => 'bamboo-agent'    # user to run agent as, default shown
 #   group       => 'bamboo-agent'    # group to install as, default shown
+#   ignore_cert => true              # should the agent ignore self signed certs?
 # }
 class bamboo::agent (
 
@@ -16,10 +17,15 @@ class bamboo::agent (
   $user        = 'bamboo-agent',
   $group       = 'bamboo-agent',
   $home        = "undefined",
+  $ignore_cert = true,
   $server
 
 ) {
 
+  $cert_val = $ignore_cert ? {
+    true,'true','TRUE':     'TRUE',
+    false,'false','FALSE':  'FALSE'
+  }
   $initscript = "/etc/init.d/${user}"
   $agent_jar  = "atlassian-bamboo-agent-installer-${version}.jar"
   $agent_home = $home ? {
@@ -59,7 +65,7 @@ class bamboo::agent (
   }
 
   exec { 'install-bamboo-agent':
-    command => "java -jar -Dbamboo.home=${agent_home} ${agent_jar} http://${server} install",
+    command => "java -jar -Dbamboo.home=${agent_home} ${agent_jar} http://${server}:${server_port} install",
     cwd     => $agent_home,
     path    => [ '/bin', '/usr/bin', '/usr/local/bin' ],
     creates => "${agent_home}/bin",
@@ -129,5 +135,33 @@ class bamboo::agent (
     ensure  => 'running',
     enable  => true,
     require => Concat[ $initscript ],
+  }
+
+  file_line { 'bamboo-conf-classpath-1':
+    path    => "${agent_home}/conf/wrapper.conf",
+    line    => "wrapper.java.classpath.1=${agent_home}/lib/wrapper.jar",
+    match   => '^wrapper.java.classpath.1=',
+    require => Exec[ 'install-bamboo-agent' ],
+  }
+
+  file_line { 'bamboo-conf-classpath-2':
+    path    => "${agent_home}/conf/wrapper.conf",
+    line    => "wrapper.java.classpath.2=${agent_home}/lib/bamboo-agent-bootstrap.jar",
+    match   => '^wrapper.java.classpath.2=',
+    require => Exec[ 'install-bamboo-agent' ],
+  }
+
+  file_line { 'bamboo-conf-librarypath-1':
+    path    => "${agent_home}/conf/wrapper.conf",
+    line    => "wrapper.java.library.path.1=${agent_home}/lib",
+    match   => '^wrapper.java.library.path.1=',
+    require => Exec[ 'install-bamboo-agent' ],
+  }
+
+  file_line { 'bamboo-conf-ignore-cert':
+    path    => "${agent_home}/conf/wrapper.conf",
+    line    => "wrapper.java.additional.2=-Dbamboo.agent.ignoreServerCertName=${cert_val}",
+    match   => '^wrapper.java.additional.2=-Dbamboo.agent.ignoreServerCertName=',
+    require => Exec[ 'install-bamboo-agent' ],
   }
 }
