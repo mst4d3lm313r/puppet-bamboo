@@ -84,7 +84,7 @@ class bamboo::server (
   }
 
   file_line { 'set-bamboo-session-timeout':
-    path    => "${atlassian_vendor_dir}/Bamboo/webapp/WEB-INF/web.xml",
+    path    => "${atlassian_vendor_dir}/atlassian-bamboo-${version}/atlassian-bamboo/WEB-INF/web.xml",
     line    => "    <session-timeout>0</session-timeout>",
     match   => '    <session-timeout>\d+</session-timeout>',
     require => Exec[ 'extract-bamboo-server' ],
@@ -92,7 +92,7 @@ class bamboo::server (
 
   file { "/etc/init.d/${user}":
     ensure => link,
-    target => "${atlassian_vendor_dir}/Bamboo/bamboo.sh",
+    target => "${atlassian_vendor_dir}/atlassian-bamboo-${version}/bamboo.sh",
     require => Exec[ 'extract-bamboo-server' ],
   }
 
