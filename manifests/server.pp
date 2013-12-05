@@ -59,8 +59,22 @@ class bamboo::server (
     command => "tar -xf ${bamboo_tgz}",
     cwd     => $atlassian_vendor_dir,
     require => Exec[ 'download-bamboo-server' ],
-    creates => "${atlassian_vendor_dir}/Bamboo",
+    creates => "${atlassian_vendor_dir}/atlassian-bamboo-${version}",
   }
+
+  file { 'bamboo.current.link':
+    ensure  => link,
+    path    => "/opt/atlassian-bamboo",
+    target  => "${atlassian_vendor_dir}/atlassian-bamboo-${version}",
+    require => Exec[ 'extract-bamboo-server' ],
+  }
+
+  file { '/opt/atlassian-bamboo/logs/':
+    ensure  => directory,
+    owner   => $user,
+    require => Exec[ 'extract-bamboo-server' ],
+  }
+
 
   group { $bamboo_group: ensure => present }
 
@@ -90,9 +104,11 @@ class bamboo::server (
     require => Exec[ 'extract-bamboo-server' ],
   }
 
-  file { "/etc/init.d/${user}":
-    ensure => link,
-    target => "${atlassian_vendor_dir}/atlassian-bamboo-${version}/bamboo.sh",
+  file { '/etc/init.d/bamboo':
+    ensure  => present,
+    path    => '/etc/init.d/bamboo',
+    content => template('bamboo/bamboo-init.sh.erb'),
+    mode    => '0755',
     require => Exec[ 'extract-bamboo-server' ],
   }
 
@@ -104,7 +120,7 @@ class bamboo::server (
     ensure  => present,
     content => template( 'bamboo/defaults.erb' ),
     require => [ File[ '/etc/default' ],
-                 File[ "/etc/init.d/${user}" ],
+                 File[ "/etc/init.d/bamboo" ],
                  File_line[ 'set-bamboo-init.properties' ] ],
   }
 
@@ -121,17 +137,17 @@ class bamboo::server (
     require => User[ $user ],
   }
 
-  file { "${log_dir}/${user}":
+  file { "${log_dir}/bamboo":
     ensure  => directory,
     owner   => $user,
     require => User[ $user ],
   }
 
-  service { $user:
+  service { "bamboo":
     ensure  => running,
     enable  => true,
     require => [ File[ '/etc/default/bamboo' ],
                  File[ "${run_dir}/${user}" ],
-                 File[ "${log_dir}/${user}" ] ],
+                 File[ "${log_dir}/bamboo" ] ],
   }
 }

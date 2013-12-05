@@ -1,0 +1,43 @@
+#!/bin/sh -e
+# bamboo startup script
+# based on a recommendation from atlassian:
+# https://confluence.atlassian.com/display/BAMBOO/Running+Bamboo+as+a+Linux+service
+#chkconfig: 2345 80 05
+#description: bamboo
+ 
+# Define some variables
+# Name of app ( bamboo, Confluence, etc )
+APP=bamboo
+# Name of the user to run as
+USER=bamboouser
+# Location of application's bin directory
+LOG=/var/log/bamboo
+BASE=/opt/atlassian-bamboo
+# Location of Java JDK
+export JAVA_HOME=/usr/lib/jvm/jdk-7-oracle-x64
+ 
+case "$1" in
+  # Start command
+  start)
+    echo "Starting $APP"
+    /bin/su -m $USER -c "cd $LOG && $BASE/bin/startup.sh &"
+    ;;
+  # Stop command
+  stop)
+    echo "Stopping $APP"
+    /bin/su -m $USER -c "$BASE/bin/shutdown.sh &> /dev/null"
+    echo "$APP stopped successfully"
+    ;;
+   # Restart command
+   restart)
+        $0 stop
+        sleep 5
+        $0 start
+        ;;
+  *)
+    echo "Usage: /etc/init.d/$APP {start|restart|stop}"
+    exit 1
+    ;;
+esac
+ 
+exit 0
