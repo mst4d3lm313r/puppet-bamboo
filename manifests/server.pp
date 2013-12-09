@@ -7,28 +7,28 @@
 # Usage:
 #
 # class { 'bamboo::server':
-#   version              => '4.2.0',            # default shown
+#   version              => '5.2.2',            # default shown
 #   atlassian_vendor_dir => '/opt/atlassian',
 #                             ^^ where to vendor atlassian products,
 #                                default shown
 #
-#   user                 => 'bamboo-server',    # should be a valid file path
+#   user                 => 'bamboouser',    # should be a valid file path
 #   group                => $user,              # default shown
-#   home                 => "/var/lib/$user",
+#   home                 => "/home/bamboouser/bamboo-home",
 #                             ^^ where config files are stored, default shown
 #
-#   log_dir              => "/var/log/${user}/bamboo.log", # default shown
-#   run_dir              => "/var/run/${user}/bamboo.pid"  # default shown
+#   log_dir              => "/home/bamboouser/bamboo-home/log", # default shown
+#   run_dir              => "/var/run/bamboo.pid"  # default shown
 # }
 class bamboo::server (
 
   $version              = '4.2.0',
   $atlassian_vendor_dir = '/opt/atlassian',
-  $user                 = 'bamboo-server',
-  $group                = 'undefined',
-  $home                 = 'undefined',
-  $log_dir              = '/var/log',
-  $run_dir              = '/var/run',
+  $user                 = 'bamboouser',
+  $group                = 'bamboouser',
+  $home                 = '/home/bamboouser/bamboo-home',
+  $log_dir              = '/home/bamboouser/bamboo-home/log',
+  $run_dir              = '/var/run/bamboo.pid',
   $port                 = '8085'
 
 ) {
