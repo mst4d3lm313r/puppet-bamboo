@@ -4,22 +4,24 @@
 # https://confluence.atlassian.com/display/BAMBOO/Running+Bamboo+as+a+Linux+service
 #chkconfig: 2345 80 05
 #description: bamboo
- 
+
+
 # Define some variables
 # Name of app ( bamboo, Confluence, etc )
 APP=bamboo
 # Name of the user to run as
 USER=bamboouser
 # Location of application's bin directory
-LOG=/var/log/bamboo
+LOG=<%= @log_dir -%>
+
 BASE=/opt/atlassian-bamboo
 # Location of Java JDK
-export JAVA_HOME=/usr/lib/jvm/jdk-7-oracle-x64
+export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64
  
 case "$1" in
   # Start command
   start)
-    echo "Starting $APP"
+    echo "Starting $APP (LOG=$LOG)"
     /bin/su -m $USER -c "cd $LOG && $BASE/bin/startup.sh &"
     ;;
   # Stop command

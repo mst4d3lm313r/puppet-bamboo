@@ -22,11 +22,11 @@
 # }
 class bamboo::server (
 
-  $version              = '4.2.0',
+  $version              = '5.2.2',
   $atlassian_vendor_dir = '/opt/atlassian',
   $user                 = 'bamboouser',
   $group                = 'bamboouser',
-  $home                 = '/home/bamboouser/bamboo-home',
+  $home                 = '/home/bamboouser',
   $log_dir              = '/home/bamboouser/bamboo-home/log',
   $run_dir              = '/var/run/bamboo.pid',
   $port                 = '8085'
@@ -34,7 +34,7 @@ class bamboo::server (
 ) {
 
   $bamboo_group = $group ? { 'undefined' => $user, default =>  $group }
-  $bamboo_home  = $home ? { 'undefined' => "/var/lib/${user}", default => $home }
+  $bamboo_home  = $home ? { 'undefined' => "/var/lib/${user}", default => "$home/bamboo-home" }
   $bamboo_tgz   = "atlassian-bamboo-${version}.tar.gz"
   $download_url = "http://www.atlassian.com/software/bamboo/downloads/binary/${bamboo_tgz}"
 
@@ -83,22 +83,30 @@ class bamboo::server (
     home    => $bamboo_home,
     require => Group[ $bamboo_group ],
   }
-
-  file { $bamboo_home:
+  
+  file { 'bamboouser_home':
+    path    => "$home",
     ensure  => directory,
     owner   => $user,
     require => User[ $user ],
   }
 
+  file { 'bamboo_home':
+    path    => "$bamboo_home",
+    ensure  => directory,
+    owner   => $user,
+    require => File['bamboouser_home'],
+  }
+
   file_line { 'set-bamboo-init.properties':
-    path    => "${atlassian_vendor_dir}/atlassian-bamboo-${version}/atlassian-bamboo/WEB-INF/classes/bamboo-init.properties",
+    path    => "/opt/atlassian-bamboo/atlassian-bamboo/WEB-INF/classes/bamboo-init.properties",
     line    => "bamboo.home=${bamboo_home}",
     match   => '^#?bamboo.home=.*$',
     require => Exec[ 'extract-bamboo-server' ],
   }
 
   file_line { 'set-bamboo-session-timeout':
-    path    => "${atlassian_vendor_dir}/atlassian-bamboo-${version}/atlassian-bamboo/WEB-INF/web.xml",
+    path    => "/opt/atlassian-bamboo/atlassian-bamboo/WEB-INF/web.xml",
     line    => "    <session-timeout>0</session-timeout>",
     match   => '    <session-timeout>\d+</session-timeout>',
     require => Exec[ 'extract-bamboo-server' ],
@@ -124,30 +132,30 @@ class bamboo::server (
                  File_line[ 'set-bamboo-init.properties' ] ],
   }
 
-  file_line { 'bamboo-server-conf-port':
-    path    => "${atlassian_vendor_dir}/atlassian-bamboo-${version}/conf/wrapper.conf",
-    match   => '^wrapper\.app\.parameter\.2=.*',
-    line    => "wrapper.app.parameter.2=${port}",
-    require => Exec[ 'extract-bamboo-server' ],
-  }
+#  file_line { 'bamboo-server-conf-port':
+#    path    => "/opt/atlassian-bamboo/atlassian-bamboo/conf/wrapper.conf",
+#    match   => '^wrapper\.app\.parameter\.2=.*',
+#    line    => "wrapper.app.parameter.2=${port}",
+#    require => Exec[ 'extract-bamboo-server' ],
+#  }
 
-  file { "${run_dir}/${user}":
+  file { "${run_dir}":
     ensure  => directory,
     owner   => $user,
     require => User[ $user ],
   }
 
-  file { "${log_dir}/bamboo":
+  file { "${log_dir}":
     ensure  => directory,
     owner   => $user,
-    require => User[ $user ],
+    require => File['bamboo_home'],
   }
 
   service { "bamboo":
     ensure  => running,
     enable  => true,
     require => [ File[ '/etc/default/bamboo' ],
-                 File[ "${run_dir}/${user}" ],
-                 File[ "${log_dir}/bamboo" ] ],
+                 File[ "${run_dir}" ],
+                 File[ "${log_dir}" ] ],
   }
 }
