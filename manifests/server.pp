@@ -102,14 +102,14 @@ class bamboo::server (
     path    => "/opt/atlassian-bamboo/atlassian-bamboo/WEB-INF/classes/bamboo-init.properties",
     line    => "bamboo.home=${bamboo_home}",
     match   => '^#?bamboo.home=.*$',
-    require => Exec[ 'extract-bamboo-server' ],
+    require => File[ 'bamboo.current.link' ],
   }
 
   file_line { 'set-bamboo-session-timeout':
     path    => "/opt/atlassian-bamboo/atlassian-bamboo/WEB-INF/web.xml",
     line    => "    <session-timeout>0</session-timeout>",
     match   => '    <session-timeout>\d+</session-timeout>',
-    require => Exec[ 'extract-bamboo-server' ],
+    require => File[ 'bamboo.current.link' ],
   }
 
   file { '/etc/init.d/bamboo':
