@@ -1,0 +1,17 @@
+vagrants/*/.vagrant
+vagrants/anura-zookeeper/sanity-check
+dist/*
+*~
+hiera/*/credentials.yaml
+vagrants/*/credentials.pp
+vagrants/*/credentials.yaml
+credentials.pp
+credentials.yaml
+s3credentials.pp
+*.orig
+*.swp
+.gitattributes
+.hgeol
+.project
+logstash
+tmp/
