@@ -68,6 +68,18 @@ class bamboo::server (
     target  => "${atlassian_vendor_dir}/atlassian-bamboo-${version}",
     require => Exec[ 'extract-bamboo-server' ],
   }
+  
+#Change vendor dir owner and permissions.
+  exec { 'atlassian-chown':
+    command => "chown -R bamboouser:bamboouser /opt/atlassian",
+    require => Exec[ 'extract-bamboo-server' ],
+  }
+  
+  exec { 'atlassian-chmod':
+    command => "chmod -R 777 /opt/atlassian",
+    require => Exec[ 'atlassian-chown' ],
+  }
+###
 
   file { '/opt/atlassian-bamboo/logs/':
     ensure  => directory,
@@ -149,13 +161,13 @@ class bamboo::server (
     ensure  => directory,
     owner   => $user,
     require => File['bamboo_home'],
-  }
+  }	
 
-  service { "bamboo":
-    ensure  => running,
-    enable  => true,
-    require => [ File[ '/etc/default/bamboo' ],
-                 File[ "${run_dir}" ],
-                 File[ "${log_dir}" ] ],
-  }
+# service { "bamboo":
+# ensure  => running,
+#   enable  => true,
+#   require => [ File[ '/etc/default/bamboo' ],
+#                File[ "${run_dir}" ],
+#                File[ "${log_dir}" ] ],
+# }
 }
