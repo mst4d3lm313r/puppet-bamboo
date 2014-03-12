@@ -1,11 +1,20 @@
-#!/bin/sh -e
+#!/bin/sh
+set -e
 # bamboo startup script
 # based on a recommendation from atlassian:
 # https://confluence.atlassian.com/display/BAMBOO/Running+Bamboo+as+a+Linux+service
-#chkconfig: 2345 80 05
-#description: bamboo
-
-
+### BEGIN INIT INFO
+# Provides: bamboo
+# Required-Start: $local_fs $remote_fs $network $time
+# Required-Stop: $local_fs $remote_fs $network $time
+# Should-Start: $syslog
+# Should-Stop: $syslog
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: Atlassian Bamboo Server
+### END INIT INFO
+# INIT Script
+######################################
 # Define some variables
 # Name of app ( bamboo, Confluence, etc )
 APP=bamboo
@@ -15,19 +24,20 @@ USER=bamboouser
 LOG=<%= @log_dir -%>
 
 BASE=/opt/atlassian-bamboo
-# Location of Java JDK
-export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64
- 
+
+tomcat_pid() {
+   echo `ps aux | grep "Dcatalina.base=/opt/atlassian-bamboo" | grep -v grep | awk '{ print $2 }'`
+}
 case "$1" in
   # Start command
   start)
-    echo "Starting $APP (LOG=$LOG)"
-    /bin/su -m $USER -c "cd $LOG && $BASE/bin/startup.sh &"
+    echo "Starting $APP"
+    /bin/su - $USER -c "export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64 && cd $BASE/logs && $BASE/bin/startup.sh &> /dev/null"
     ;;
   # Stop command
   stop)
     echo "Stopping $APP"
-    /bin/su -m $USER -c "$BASE/bin/shutdown.sh &> /dev/null"
+    /bin/su - $USER -c "export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64 && $BASE/bin/shutdown.sh &> /dev/null"
     echo "$APP stopped successfully"
     ;;
    # Restart command
@@ -36,10 +46,18 @@ case "$1" in
         sleep 5
         $0 start
         ;;
+   status)
+        pid=$(tomcat_pid)
+        if [ -n "$pid" ]
+        then
+                echo "Your Bamboo Instance is running with pid: $pid"
+        else
+                echo "Your Bamboo Instance is not running"
+        fi
+        ;;
   *)
-    echo "Usage: /etc/init.d/$APP {start|restart|stop}"
+    echo "Usage: /etc/init.d/$APP {start|restart|stop|status}"
     exit 1
     ;;
 esac
- 
 exit 0
